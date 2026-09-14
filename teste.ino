@@ -106,6 +106,10 @@ void setup() {
 // =====================================================================================
 void loop() 
 {
+  if (!roboLigado) {
+    verificaSensores(); // Mostra os valores dos sensores no Serial Monitor
+  }
+
   // -----------------------------------------------------------------------------------
   // CONTROLE DO ROBÔ E REGRA DOS 5 SEGUNDOS (NÃO ALTERAR NADA NESTE BLOCO)
   // -----------------------------------------------------------------------------------
@@ -117,8 +121,10 @@ void loop()
   // -----------------------------------------------------------------------------------
 
 
-  // TODO: [1] Faça as variáveis dos sensores lerem os pinos analógicos correspondentes
-
+  // [1] Faça as variáveis dos sensores lerem os pinos analógicos correspondentes
+  sharpValue = analogRead(SHARP);
+  sensorEsqValue = analogRead(SE);
+  sensorDirValue = analogRead(SD);
 
   // TODO: [2] Monte a lógica de decisão do robô usando as variáveis de threshold e line
   if (/* Condição para detectar a linha branca na arena */ false) {
@@ -187,4 +193,17 @@ void receptorIR()
 
     IrReceiver.resume();
   }
+}
+
+void verificaSensores() {
+  delay(500);
+  sharpValue = analogRead(SHARP);
+  sensorEsqValue = analogRead(SE);
+  sensorDirValue = analogRead(SD);
+  Serial.print("Sensor de Proximidade (SHARP): ");
+  Serial.println(sharpValue);
+  Serial.print("Sensor de Linha Esquerdo (SE): ");
+  Serial.println(sensorEsqValue);
+  Serial.print("Sensor de Linha Direito (SD): ");
+  Serial.println(sensorDirValue);
 }
