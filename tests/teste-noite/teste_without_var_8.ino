@@ -3,6 +3,12 @@
 // =====================================================================================
 
 // Motor A (Esquerdo)
+
+
+//dimiuir velocidade
+//melhorar a funcao de encontrar o oponente
+
+
 #define ENA 5
 #define IN1 6
 #define IN2 7
@@ -38,6 +44,9 @@ int line = 700;
 // Tempos das manobras ao encontrar a borda, em milissegundos
 int tempoRe = 300;
 int tempoGiro = 400;
+
+// Reduz a velocidade geral para evitar movimentos muito agressivos
+const float fatorVelocidade = 0.65;
 
 // Máquina de estados para evitar delay() bloqueante
 enum EstadoBorda { BORDA_INATIVA, BORDA_RE, BORDA_GIRO };
@@ -127,22 +136,38 @@ void moveToOponent() {
 }
 
 void searchMethod() {
-  motores(1, -1);
+  motores(1 * fatorVelocidade, -1 * fatorVelocidade);
 }
 
 // =====================================================================================
 // FUNÇÕES AUXILIARES DAS ESTRATÉGIAS
 // =====================================================================================
 
-void motores(int esquerdo, int direito) {
-  digitalWrite(ENA, HIGH);
-  digitalWrite(ENB, HIGH);
+void motores(float esquerdo, float direito) {
+  int velEsq = (int)(abs(esquerdo) * 255 * fatorVelocidade);
+  int velDir = (int)(abs(direito) * 255 * fatorVelocidade);
 
-  digitalWrite(IN1, esquerdo == 1 ? HIGH : LOW);
-  digitalWrite(IN2, esquerdo == -1 ? HIGH : LOW);
+  if (esquerdo >= 0) {
+    digitalWrite(IN1, HIGH);
+    digitalWrite(IN2, LOW);
+    analogWrite(ENA, velEsq);
+  }
+  else {
+    digitalWrite(IN1, LOW);
+    digitalWrite(IN2, HIGH);
+    analogWrite(ENA, velEsq);
+  }
 
-  digitalWrite(IN3, direito == 1 ? HIGH : LOW);
-  digitalWrite(IN4, direito == -1 ? HIGH : LOW);
+  if (direito >= 0) {
+    digitalWrite(IN3, HIGH);
+    digitalWrite(IN4, LOW);
+    analogWrite(ENB, velDir);
+  }
+  else {
+    digitalWrite(IN3, LOW);
+    digitalWrite(IN4, HIGH);
+    analogWrite(ENB, velDir);
+  }
 }
 
 bool ehBranco(int valor) {
