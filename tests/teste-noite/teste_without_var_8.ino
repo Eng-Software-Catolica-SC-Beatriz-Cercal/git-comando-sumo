@@ -46,7 +46,7 @@ int tempoRe = 300;
 int tempoGiro = 400;
 
 // Reduz a velocidade geral para evitar movimentos muito agressivos
-const float fatorVelocidade = 0.8;
+const float fatorVelocidade = 0.8; //1 ou 0.95
 
 // Máquina de estados para evitar delay() bloqueante
 enum EstadoBorda { BORDA_INATIVA, BORDA_RE, BORDA_GIRO };
