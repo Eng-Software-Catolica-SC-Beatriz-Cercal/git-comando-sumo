@@ -14,8 +14,8 @@
 
 // Pinos dos sensores e LED
 #define SHARP A0
-#define SE A1
-#define SD A2
+#define SENS_E A1
+#define SENS_D A2
 #define LedR 9
 #define LedG 10
 #define LedB 11
@@ -55,8 +55,8 @@ void setup() {
 	pinMode(LedB, OUTPUT);
 
 	pinMode(SHARP, INPUT);
-	pinMode(SE, INPUT);
-	pinMode(SD, INPUT);
+	pinMode(SENS_E, INPUT);
+	pinMode(SENS_D, INPUT);
 	pinMode(IR, INPUT);
 
 	Serial.begin(9600);
@@ -70,18 +70,20 @@ void loop() {
 	receptorIR();
 
 	if (!roboLigado) {
+		colorLED(0, 0, 0);
 		verificaSensores();
 		return;
 	}
 
 	if (millis() - tempoInicio < 5000) {
+		colorLED(1, 1, 0);
 		pararMotores();
 		return;
 	}
 
 	sharpValue = analogRead(SHARP);
-	sensorEsqValue = analogRead(SE);
-	sensorDirValue = analogRead(SD);
+	sensorEsqValue = analogRead(SENS_E);
+	sensorDirValue = analogRead(SENS_D);
 
 	if (estadoBorda != 0) {
 		atualizaInWhiteLine();
@@ -100,6 +102,7 @@ void loop() {
 }
 
 void inWhiteLine() {
+	colorLED(1, 0, 0);
 	bordaNaEsquerda = sensorEsqValue < line;
 	motores(-1.0, -1.0);
 	estadoBorda = 1;
@@ -116,6 +119,7 @@ void atualizaInWhiteLine() {
 		else {
 			motores(-1.0, 1.0);
 		}
+		colorLED(1, 0, 1);
 		estadoBorda = 2;
 		tempoEstadoBorda = agora;
 	}
@@ -125,10 +129,12 @@ void atualizaInWhiteLine() {
 }
 
 void moveToOponent() {
+	colorLED(0, 0, 1);
 	motores(forcaAtaque, forcaAtaque);
 }
 
 void searchMethod() {
+	colorLED(0, 1, 0);
 	motores(forcaBusca, -forcaBusca);
 }
 
@@ -167,6 +173,8 @@ void pararMotores() {
 	estadoBorda = 0;
 }
 
+// Mapa do LED: apagado = desligado, amarelo = largada (5s), vermelho = borda (re),
+// magenta = borda (giro), azul = atacando, verde = procurando.
 void colorLED(int red, int green, int blue) {
 	digitalWrite(LedR, red ? HIGH : LOW);
 	digitalWrite(LedG, green ? HIGH : LOW);
@@ -205,8 +213,8 @@ void verificaSensores() {
 	ultimoDebug = agora;
 
 	sharpValue = analogRead(SHARP);
-	sensorEsqValue = analogRead(SE);
-	sensorDirValue = analogRead(SD);
+	sensorEsqValue = analogRead(SENS_E);
+	sensorDirValue = analogRead(SENS_D);
 
 	Serial.print("SHARP: ");
 	Serial.println(sharpValue);
