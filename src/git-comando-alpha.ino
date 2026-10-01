@@ -35,7 +35,7 @@ int tempoGiro180   = 250;
 int tempoGiroLado  = 220;
 
 // Ajustes - oponente
-int limiteOponente   = 500;  // acima disso = oponente perto -> AJUSTE pelo Serial
+int limiteOponente   = 400;  // acima disso = oponente perto -> AJUSTE pelo Serial
 int velocidadeAtaque = 255;  // força máxima
 int velocidadeBusca  = 160;  // giro de busca (devagar para o Sharp conseguir ver); 160 parece ser o ideal
 
