@@ -2,7 +2,7 @@
 
 # Git Comando
 
-**Robô de sumô autônomo com Arduino, feito pela equipe Git Comando para o desafio de robótica da GIT.**
+**Robô autônomo com Arduino, feito pela equipe Git Comando para o desafio de robótica do componente curricular de PAC (Projeto de Aprendizagem Colaborativa).**
 
 </div>
 
