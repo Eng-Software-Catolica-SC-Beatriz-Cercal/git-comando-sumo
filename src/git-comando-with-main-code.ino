@@ -2,8 +2,8 @@
 // PERSEGUIDOR_GIT_COMANDO.ino
 // Código para o robô perseguidor do desafio de robótica da GIT
 // Autor: Equipe Git Comando
-// Data: 2026-10-05
-// Ultima Atualização: 2026-10-05 por Miguel Rocha Xavier
+// Data: 2024-06-10
+// Ultima Atualização: 2024-06-10 por Miguel Rocha Xavier
 // =-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
 
 /*
@@ -47,12 +47,25 @@
 #define IN4 4
 
 // Sensores
-#define SHARP A0  // Proximidade
-#define SE A1     // Linha esquerdo
-#define SD A2     // Linha direito
+#define SHARP A0 // Sensor de Proximidade
+#define SE A1    // Sensor de Linha (Esquerdo)
+#define SD A2    // Sensor de Linha (Direito)
+
+
+// =====================================================================================
+// VARIÁVEIS DE CONFIGURAÇÃO (PODE AJUSTAR CONFORME OS TESTES)
+// =====================================================================================
+
+// Leitura dos sensores
+int sharpValue;      // Guarda o valor lido pelo sensor de distância
+int sensorEsqValue;  // Guarda a cor lida pelo sensor esquerdo
+int sensorDirValue;  // Guarda a cor lida pelo sensor direito
+
+// Limiares de Calibração
+int threshold = 400; // Valor limite para considerar que detectou um oponente (acima disso = oponente perto -> AJUSTE pelo Serial)
+int line = 200;      // Valor limite para considerar que detectou a linha branca (abaixo disso = branco/borda)
 
 // Ajustes - linha
-int limiteBranco   = 200;   // abaixo disso = branco (borda)
 int velocidade     = 140;   // velocidade andando
 int velocidadeGiro = 180;   // velocidade no giro de fuga
 int tempoFreio     = 150;
@@ -62,99 +75,135 @@ int tempoGiro180   = 250;
 int tempoGiroLado  = 220;
 
 // Ajustes - oponente
-int limiteOponente   = 400;  // acima disso = oponente perto -> AJUSTE pelo Serial
 int velocidadeAtaque = 255;  // força máxima
 int velocidadeBusca  = 160;  // giro de busca (devagar para o Sharp conseguir ver); 160 parece ser o ideal
 
 // Ajustes - largada
 int tempoArrancada = 1000;    // ms andando pra frente na largada
 
-// =====================================================================================
-// VARIÁVEIS DE CONFIGURAÇÃO (PODE AJUSTAR CONFORME OS TESTES)
-// =====================================================================================
 
-int sharpValue;
-int valorEsq;
-int valorDir;
-
+// =====================================================================================
+// SETUP DO SISTEMA (NÃO ALTERAR)
+// =====================================================================================
 void setup() {
+  // Configuração dos Pinos dos Motores
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
   pinMode(IN3, OUTPUT);
   pinMode(IN4, OUTPUT);
   pinMode(ENA, OUTPUT);
   pinMode(ENB, OUTPUT);
+
+  // Configuração dos Sensores
+  pinMode(SHARP, INPUT);
   pinMode(SE, INPUT);
   pinMode(SD, INPUT);
-  pinMode(SHARP, INPUT);
 
   Serial.begin(9600);
 
-  // Regra dos 5 segundos
-  delay(5000);
+  // -----------------------------------------------------------------------------------
+  // REGRA DOS 5 SEGUNDOS (NÃO ALTERAR NADA NESTE BLOCO)
+  // -----------------------------------------------------------------------------------
+  delay(5000); // Respeita o tempo obrigatório da regra
+  // -----------------------------------------------------------------------------------
 
   // Avança um pouco antes de começar a lutar (parando se encontrar a borda)
   unsigned long inicio = millis();
-  frente(velocidade);
+  forward(velocidade);
   while (millis() - inicio < tempoArrancada) {
-    if (analogRead(SE) < limiteBranco || analogRead(SD) < limiteBranco) {
+    if (analogRead(SE) < line || analogRead(SD) < line) {
       break;  // viu branco, deixa o loop() tratar
     }
   }
 }
 
+
+// =====================================================================================
+// LOOP PRINCIPAL
+// =====================================================================================
 void loop() {
-  valorEsq   = analogRead(SE);
-  valorDir   = analogRead(SD);
-  sharpValue = analogRead(SHARP);
+  // [1] Faça as variáveis dos sensores lerem os pinos analógicos correspondentes
+  sensorEsqValue = analogRead(SE);
+  sensorDirValue = analogRead(SD);
+  sharpValue     = analogRead(SHARP);
 
-  // Serial.println(sharpValue);  // descomente para calibrar o limiteOponente
+  // Serial.println(sharpValue);  // descomente para calibrar o threshold
 
-  bool brancoEsq = valorEsq < limiteBranco;
-  bool brancoDir = valorDir < limiteBranco;
+  bool brancoEsq = sensorEsqValue < line;
+  bool brancoDir = sensorDirValue < line;
 
+  // [2] Monte a lógica de decisão do robô usando as variáveis de threshold e line
   // ---------- 1) LINHA BRANCA (prioridade máxima) ----------
-  if (brancoEsq || brancoDir) {
-    freiar();
-    delay(tempoFreio);
-
-    valorEsq = analogRead(SE);
-    valorDir = analogRead(SD);
-    brancoEsq = brancoEsq || (valorEsq < limiteBranco);
-    brancoDir = brancoDir || (valorDir < limiteBranco);
-
-    if (brancoEsq && brancoDir) {
-      re();
-      delay(tempoRe);
-      girarDireita(velocidadeGiro);
-      delay(tempoGiro180);
-    }
-    else if (brancoEsq) {
-      re();
-      delay(tempoReLado);
-      girarDireita(velocidadeGiro);
-      delay(tempoGiroLado);
-    }
-    else {
-      re();
-      delay(tempoReLado);
-      girarEsquerda(velocidadeGiro);
-      delay(tempoGiroLado);
-    }
+  if (brancoEsq || brancoDir) { // Condição para detectar a linha branca na arena
+    inWhiteLine();
   }
   // ---------- 2) OPONENTE PERTO -> ATAQUE ----------
-  else if (sharpValue > limiteOponente) {
-    frente(velocidadeAtaque);
+  else if (sharpValue > threshold) { // Condição para detectar o oponente
+    moveToOponent();
   }
   // ---------- 3) NADA -> BUSCA GIRANDO ----------
   else {
-    girarDireita(velocidadeBusca);
+    searchMethod();
   }
 }
 
+
+// =====================================================================================
+// ESTRATÉGIAS DO ROBÔ (ÁREA DE PROGRAMAÇÃO)
+// =====================================================================================
+
+// Defina os movimentos do robô ao encontrar a linha branca
+void inWhiteLine() {
+  // Usa as leituras feitas no loop() para saber qual lado viu a borda
+  bool brancoEsq = sensorEsqValue < line;
+  bool brancoDir = sensorDirValue < line;
+
+  brake();
+  delay(tempoFreio);
+
+  sensorEsqValue = analogRead(SE);
+  sensorDirValue = analogRead(SD);
+  brancoEsq = brancoEsq || (sensorEsqValue < line);
+  brancoDir = brancoDir || (sensorDirValue < line);
+
+  if (brancoEsq && brancoDir) {
+    backward();
+    delay(tempoRe);
+    turnRight(velocidadeGiro);
+    delay(tempoGiro180);
+  }
+  else if (brancoEsq) {
+    backward();
+    delay(tempoReLado);
+    turnRight(velocidadeGiro);
+    delay(tempoGiroLado);
+  }
+  else {
+    backward();
+    delay(tempoReLado);
+    turnLeft(velocidadeGiro);
+    delay(tempoGiroLado);
+  }
+}
+
+// Defina os movimentos do robô ao detectar o adversário
+void moveToOponent() {
+  forward(velocidadeAtaque);
+}
+
+// Defina o padrão de busca do robô enquanto não encontra nada
+void searchMethod() {
+  turnRight(velocidadeBusca);
+}
+
+
+// =====================================================================================
+// FUNÇÕES DE SUPORTE DO SISTEMA (NÃO ALTERAR)
+// =====================================================================================
+
 // ---------------- MOVIMENTOS ----------------
 
-void frente(int vel) {
+void forward(int vel) {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
   analogWrite(ENA, vel);
@@ -164,7 +213,7 @@ void frente(int vel) {
   analogWrite(ENB, vel);
 }
 
-void re() {
+void backward() {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
   analogWrite(ENA, velocidade);
@@ -175,7 +224,7 @@ void re() {
 }
 
 // Gira no eixo para a direita
-void girarDireita(int vel) {
+void turnRight(int vel) {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, LOW);
   analogWrite(ENA, vel);
@@ -186,7 +235,7 @@ void girarDireita(int vel) {
 }
 
 // Gira no eixo para a esquerda
-void girarEsquerda(int vel) {
+void turnLeft(int vel) {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, HIGH);
   analogWrite(ENA, vel);
@@ -197,7 +246,7 @@ void girarEsquerda(int vel) {
 }
 
 // Freio ativo
-void freiar() {
+void brake() {
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, HIGH);
   analogWrite(ENA, 255);
@@ -207,7 +256,8 @@ void freiar() {
   analogWrite(ENB, 255);
 }
 
-void parar() {
+// Parada dos motores
+void stop() {
   digitalWrite(IN1, LOW);
   digitalWrite(IN2, LOW);
   digitalWrite(IN3, LOW);
