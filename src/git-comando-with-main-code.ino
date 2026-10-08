@@ -1,11 +1,3 @@
-// =-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-// PERSEGUIDOR_GIT_COMANDO.ino
-// Código para o robô perseguidor do desafio de robótica da GIT
-// Autor: Equipe Git Comando
-// Data: 2024-06-10
-// Ultima Atualização: 2024-06-10 por Miguel Rocha Xavier
-// =-=-=-=-=-=--=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-
-
 /*
  * =====================================================================================
  *                         PROJETO ROBÔ DE SUMÔ - ARDUINO
